@@ -2703,11 +2703,6 @@ bool HandleClass15 (int BasicLineNo, int StatementNo, int Keyword, byte **Index)
     (*Index) ++;
     if (CheckEnd (BasicLineNo, StatementNo, Index))
       return (FALSE);
-    if (**Index == ')')
-    {
-      fprintf (ErrStream, "ERROR in line %d, statement %d - Empty parameter array not allowed\n", BasicLineNo, StatementNo);
-      return (FALSE);
-    }
     while (**Index != ')')
     {
       if (!ScanVariable (BasicLineNo, StatementNo, Keyword, Index, &Type, &VarNameLen, -1))
@@ -2990,6 +2985,7 @@ int main (int argc, char **argv)
   char  FileNameOut[256] = "\0";
   char  LineIn[MAXLINELENGTH + 1];                                                           /* One line read from the ASCII file */
   char *BasicIndex;                                                        /* Current scan position in the (converted) ASCII line */
+  char *BasicNextIndex;                                                       /* Next scan position in the (converted) ASCII line */
   byte *ResultIndex;                                                          /* Current write index in to the binary result line */
   byte  Token;
   int   LineCount        = 0;                                                                     /* Line count in the ASCII file */
@@ -3189,17 +3185,29 @@ int main (int argc, char **argv)
           }
           else if (*BasicIndex == '(')                                                                         /* Opening bracket */
           {
-            BracketCount ++;
-            *(ResultIndex ++) = *(BasicIndex ++);
-            if (HandlingDEFFN && !InsideDEFFN)
-#ifdef __DEBUG__
+            BasicNextIndex = BasicIndex;
+            BasicNextIndex++;
+            if (HandlingDEFFN && !InsideDEFFN && *BasicNextIndex == ')')
             {
-              printf ("DEBUG - %sDEFFN, Going inside parameter list\n", ListSpaces);
-              InsideDEFFN = TRUE;                                                           /* Signal: require special treatment! */
+              /* Function has no parameters, like DEF FN A() */
+              *(ResultIndex ++) = *(BasicIndex ++);
+              *(ResultIndex ++) = *(BasicIndex ++);
+              InsideDEFFN = FALSE;                                                               /* Mark end of special treatment */
+              HandlingDEFFN = FALSE;                                             /* (The part after the '=' is just like eg. LET) */
             }
+            else {
+              BracketCount ++;
+              *(ResultIndex ++) = *(BasicIndex ++);
+              if (HandlingDEFFN && !InsideDEFFN)
+#ifdef __DEBUG__
+              {
+                printf ("DEBUG - %sDEFFN, Going inside parameter list\n", ListSpaces);
+                InsideDEFFN = TRUE;                                                           /* Signal: require special treatment! */
+              }
 #else
-              InsideDEFFN = TRUE;                                                           /* Signal: require special treatment! */
+                InsideDEFFN = TRUE;                                                           /* Signal: require special treatment! */
 #endif
+            }
           }
           else if (*BasicIndex == ')')                                                                         /* Closing bracket */
           {
