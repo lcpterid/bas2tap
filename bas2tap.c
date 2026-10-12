@@ -942,115 +942,118 @@ bool ScanVariable (int BasicLineNo, int StatementNo, int Keyword, byte **Index, 
 #endif
   if (AllowSlicing >= 0 && **Index == '(')                                                                  /* Slice the string ? */
   {
+    while (**Index == '(')
+    {
 #ifdef __DEBUG__
-    printf ("DEBUG - %sScanVariable, reading index\n", ListSpaces);
+      printf ("DEBUG - %sScanVariable, reading index\n", ListSpaces);
 #endif
-    if (*NameLen > 1)                                                             /* Arrays can only have a single character name */
-    {
-      fprintf (ErrStream, "ERROR in line %d, statement %d - Arrays can only have single character names\n",
-               BasicLineNo, StatementNo);
-      return (FALSE);
-    }
-    if (AllowSlicing == 0)                                                                      /* Slicing/Indexing not allowed ? */
-    {
-      fprintf (ErrStream, "ERROR in line %d, statement %d - Slicing/Indexing not allowed\n", BasicLineNo, StatementNo);
-      return (FALSE);
-    }
-    (*Index) ++;                                                                                            /* (Skip the bracket) */
-    if (**Index == ')')                                                                           /* Empty slice "a$()" is not ok */
-    {
-      fprintf (ErrStream, "ERROR in line %d, statement %d - Empty array index not allowed\n", BasicLineNo, StatementNo);
-      return (FALSE);
-    }
-    if (**Index == 0xCC)                                                                           /* "a$( TO num)" or "a$( TO )" */
-    {
-      if (AllowSlicing == 2)
+      if (*NameLen > 1)                                                             /* Arrays can only have a single character name */
       {
-        fprintf (ErrStream, "ERROR in line %d, statement %d - Slicing token \"TO\" inappropriate for arrays\n",
+        fprintf (ErrStream, "ERROR in line %d, statement %d - Arrays can only have single character names\n",
                  BasicLineNo, StatementNo);
         return (FALSE);
       }
-    }
-    else                                                                                      /* Not "a$( TO num)" nor "a$( TO )" */
-    {
-      if (!TokenBracket)
+      if (AllowSlicing == 0)                                                                      /* Slicing/Indexing not allowed ? */
       {
-        TokenBracket = TRUE;                                                                          /* Allow complex expression */
-        SetTokenBracket = TRUE;
-      }
-      if (!ScanExpression (BasicLineNo, StatementNo, '(', Index, &SubType, 0))                                 /* First parameter */
-        return (FALSE);
-      if (SetTokenBracket)
-        TokenBracket = FALSE;
-      if (!SubType)                                                                                            /* Must be numeric */
-      {
-        fprintf (ErrStream, "ERROR in line %d, statement %d - Variables indices must be numeric\n", BasicLineNo, StatementNo);
+        fprintf (ErrStream, "ERROR in line %d, statement %d - Slicing/Indexing not allowed\n", BasicLineNo, StatementNo);
         return (FALSE);
       }
-      if (**Index == ')')                                                                                      /* "a$(num)" is ok */
+      (*Index) ++;                                                                                            /* (Skip the bracket) */
+      if (**Index == ')')                                                                           /* Empty slice "a$()" is not ok */
       {
-        (*Index) ++;
+        fprintf (ErrStream, "ERROR in line %d, statement %d - Empty array index not allowed\n", BasicLineNo, StatementNo);
+        return (FALSE);
+      }
+      if (**Index == 0xCC)                                                                           /* "a$( TO num)" or "a$( TO )" */
+      {
+        if (AllowSlicing == 2)
+        {
+          fprintf (ErrStream, "ERROR in line %d, statement %d - Slicing token \"TO\" inappropriate for arrays\n",
+                   BasicLineNo, StatementNo);
+          return (FALSE);
+        }
+      }
+      else                                                                                      /* Not "a$( TO num)" nor "a$( TO )" */
+      {
+        if (!TokenBracket)
+        {
+          TokenBracket = TRUE;                                                                          /* Allow complex expression */
+          SetTokenBracket = TRUE;
+        }
+        if (!ScanExpression (BasicLineNo, StatementNo, '(', Index, &SubType, 0))                                 /* First parameter */
+          return (FALSE);
+        if (SetTokenBracket)
+          TokenBracket = FALSE;
+        if (!SubType)                                                                                            /* Must be numeric */
+        {
+          fprintf (ErrStream, "ERROR in line %d, statement %d - Variables indices must be numeric\n", BasicLineNo, StatementNo);
+          return (FALSE);
+        }
+        if (**Index == ')')                                                                                      /* "a$(num)" is ok */
+        {
+          (*Index) ++;
 #ifdef __DEBUG__
-        printf ("DEBUG - %sScanVariable, index ending, next char is \"%s\"\n", ListSpaces, TokenMap[**Index].Token);
+          printf ("DEBUG - %sScanVariable, index ending, next char is \"%s\"\n", ListSpaces, TokenMap[**Index].Token);
 #endif
-        return (TRUE);
+          continue;
+        }
       }
-    }
-    if (**Index != 0xCC && **Index != ',')                                                          /* Either an array or a slice */
-    {
-      fprintf (ErrStream, "ERROR in line %d, statement %d - Unexpected index character \"%c\"\n",
-               BasicLineNo, StatementNo, **Index);
-      return (FALSE);
-    }
-    if (**Index == ',')
-      IsArray = TRUE;
-    else
-    {
-      if (AllowSlicing == 2)
+      if (**Index != 0xCC && **Index != ',')                                                          /* Either an array or a slice */
       {
-        fprintf (ErrStream, "ERROR in line %d, statement %d - Slicing token \"TO\" inappropriate for arrays\n",
-                 BasicLineNo, StatementNo);
+        fprintf (ErrStream, "ERROR in line %d, statement %d - Unexpected index character \"%c\"\n",
+                 BasicLineNo, StatementNo, **Index);
         return (FALSE);
       }
-      if (*Type)                                                                          /* Only character strings can be sliced */
+      if (**Index == ',')
+        IsArray = TRUE;
+      else
       {
-        fprintf (ErrStream, "ERROR in line %d, statement %d - Only character strings can be sliced\n", BasicLineNo, StatementNo);
-        return (FALSE);
+        if (AllowSlicing == 2)
+        {
+          fprintf (ErrStream, "ERROR in line %d, statement %d - Slicing token \"TO\" inappropriate for arrays\n",
+                   BasicLineNo, StatementNo);
+          return (FALSE);
+        }
+        if (*Type)                                                                          /* Only character strings can be sliced */
+        {
+          fprintf (ErrStream, "ERROR in line %d, statement %d - Only character strings can be sliced\n", BasicLineNo, StatementNo);
+          return (FALSE);
+        }
       }
-    }
-    do
-    {
-      (*Index) ++;                                                                  /* Skip each "," (or the "TO" for non-arrays) */
-      if (!TokenBracket)
+      do
       {
-        TokenBracket = TRUE;
-        SetTokenBracket = TRUE;
+        (*Index) ++;                                                                  /* Skip each "," (or the "TO" for non-arrays) */
+        if (!TokenBracket)
+        {
+          TokenBracket = TRUE;
+          SetTokenBracket = TRUE;
+        }
+        if (!ScanExpression (BasicLineNo, StatementNo, '(', Index, &SubType, 0))                     /* Second or further parameter */
+          return (FALSE);
+        if (SetTokenBracket)
+          TokenBracket = FALSE;
+        if (!SubType)                                                                                            /* Must be numeric */
+        {
+          fprintf (ErrStream, "ERROR in line %d, statement %d - Variables indices must be numeric\n", BasicLineNo, StatementNo);
+          return (FALSE);
+        }
+        if (!IsArray && **Index != ')')
+        {
+          BADTOKEN ("\")\"", TokenMap[**Index].Token);
+          return (FALSE);
+        }
+        else if (IsArray && **Index != ',' && **Index != ')' && **Index != 0xCC)
+        {
+          BADTOKEN ("\",\"", TokenMap[**Index].Token);
+          return (FALSE);
+        }
       }
-      if (!ScanExpression (BasicLineNo, StatementNo, '(', Index, &SubType, 0))                     /* Second or further parameter */
-        return (FALSE);
-      if (SetTokenBracket)
-        TokenBracket = FALSE;
-      if (!SubType)                                                                                            /* Must be numeric */
-      {
-        fprintf (ErrStream, "ERROR in line %d, statement %d - Variables indices must be numeric\n", BasicLineNo, StatementNo);
-        return (FALSE);
-      }
-      if (!IsArray && **Index != ')')
-      {
-        BADTOKEN ("\")\"", TokenMap[**Index].Token);
-        return (FALSE);
-      }
-      else if (IsArray && **Index != ',' && **Index != ')' && **Index != 0xCC)
-      {
-        BADTOKEN ("\",\"", TokenMap[**Index].Token);
-        return (FALSE);
-      }
-    }
-    while (**Index != ')');
-    (*Index) ++;                                                                                   /* (Step past closing bracket) */
+      while (**Index != ')');
+      (*Index) ++;                                                                                   /* (Step past closing bracket) */
 #ifdef __DEBUG__
-    printf ("DEBUG - %sScanVariable, index ending, next char is \"%s\"\n", ListSpaces, TokenMap[**Index].Token);
+      printf ("DEBUG - %sScanVariable, index ending, next char is \"%s\"\n", ListSpaces, TokenMap[**Index].Token);
 #endif
+    }
   }
   return (TRUE);
 }
