@@ -1,7 +1,7 @@
 
 ## `lenient` branch
 
-This branch allows four extra formatting constructs:
+This branch allows two extra formatting constructs:
 
 * arithmetic in function args
 * void functions with no args
