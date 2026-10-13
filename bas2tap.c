@@ -2996,6 +2996,7 @@ int main (int argc, char **argv)
   int   SubLineCount;                                                                                 /* Current statement number */
   bool  ExpectKeyword;                                                       /* If TRUE, the next scanned token must be a keyword */
   bool  InString;                                                                                     /* TRUE while inside quotes */
+  int   SequenceResult;
   int   BracketCount     = 0;                                                               /* Match opening and closing brackets */
   int   AutoStart;                                                             /* Auto-start line as provided on the command line */
   int   ObjectLength;                                                                      /* Binary length of one converted line */
@@ -3149,6 +3150,16 @@ int main (int argc, char **argv)
             {
               InString = TRUE;
               *(ResultIndex ++) = *(BasicIndex ++);
+            }
+          }
+          else if (*BasicIndex == '{' &&
+              (SequenceResult = ExpandSequences (BasicLineNo, &BasicIndex, &ResultIndex, FALSE) != 0))
+          {
+            switch (SequenceResult)
+            {
+              case -1 : AllOk = FALSE; break;                                                       /* (Error - already reported) */
+              case  1 : break;                                                         /* expansion was made, pointers have moved */
+               /* if SequenceResult is 0, the { is not a special sequence, and we continue to process below. Probably will error. */
             }
           }
           else if (ExpectKeyword)
