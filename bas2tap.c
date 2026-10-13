@@ -1579,7 +1579,7 @@ bool ScanExpression (int BasicLineNo, int StatementNo, int Keyword, byte **Index
                break;
     }
     /* Piece done, continue */
-    if (TokenMap[Keyword].TokenType == 4)              /* Just did a string operand to a function ? */
+    if (FALSE) /* don't limit function args to one var name or constant anymore. We don't break out until we see a comma */
     {                                                                                    /* Then step back to evaluate the result */
       if (!TotalTypeKnown)
         *Type = SubType;
