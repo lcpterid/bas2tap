@@ -1,3 +1,16 @@
+
+## `very-lenient` branch
+
+This branch allows four extra formatting constructs:
+
+* arithmetic in function args
+* void functions with no args
+* any number of juxtaposed brackets for array indices or slice
+* special sequences outide of strings
+
+## Original README
+
+
 BAS2TAP v2.6                                                (Release 20-01-2013)
 Copyleft (C) 1998-2013 Martijn van der Heide, ThunderWare Research Center.
 
