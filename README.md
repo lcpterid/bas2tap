@@ -6,7 +6,7 @@ This branch allows four extra formatting constructs:
 * arithmetic in function args
 * void functions with no args
 * any number of juxtaposed brackets for array indices or slice
-* special sequences outide of strings
+* special sequences outside of strings
 
 ## Original README
 
